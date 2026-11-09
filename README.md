@@ -30,3 +30,6 @@ The demo has no uploads or admin. For the broker to self-manage you need:
 4. Replace the `P` constant with a fetch from the API (or a build-time fetch) and cache it.
 5. HTTPS hosting (Netlify, Vercel, Cloudflare Pages) with HTTP range support for video and server-side validation.
 6. Optional: per-property prerendered pages for SEO and analytics for call-button taps.
+
+## Backend
+See SETUP.md for the client self-service admin portal (admin.html) and Supabase setup.
