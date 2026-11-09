@@ -31,5 +31,5 @@ The demo has no uploads or admin. For the broker to self-manage you need:
 5. HTTPS hosting (Netlify, Vercel, Cloudflare Pages) with HTTP range support for video and server-side validation.
 6. Optional: per-property prerendered pages for SEO and analytics for call-button taps.
 
-## Backend
-See SETUP.md: the admin portal (admin.html) saves to this GitHub repo; no other service needed.
+## Admin
+See SETUP.md. admin.html is a no-password demo; admin-live.html is the GitHub-backed version.

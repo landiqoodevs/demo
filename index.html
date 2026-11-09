@@ -65,7 +65,7 @@ footer{padding:32px 20px;text-align:center;color:var(--mute);font-size:.8rem;bor
 <header><a class="logo" href="#home">Landiqoo <b>Estates</b></a><nav id="nav"></nav><div class="hr"><a class="btn gold" id="hcall" href="#">Call</a><button class="hb" id="hb" aria-label="Open menu" aria-expanded="false">☰</button></div></header>
 <div id="menu"></div><main id="app"></main>
 <div id="lb" role="dialog" aria-label="Gallery"><button id="lx" style="top:16px;right:16px" aria-label="Close">✕</button><button id="lp" style="left:12px" aria-label="Previous">‹</button><button id="ln" style="right:12px" aria-label="Next">›</button><div id="lc" style="width:100%;display:grid;place-items:center"></div><p id="lt" class="mut"></p></div>
-<footer>© Landiqoo Estates — demo website by Landiqoo. All property content, imagery and models are placeholders.<br><a href="admin.html" rel="nofollow" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;margin-top:8px;border:1px solid var(--line);border-radius:99px;text-decoration:none;color:var(--mute)">🔒 Admin login</a></footer>
+<footer>© Landiqoo Estates — demo website by Landiqoo. All property content, imagery and models are placeholders.<br><a href="admin.html" rel="nofollow" style="display:inline-flex;align-items:center;min-height:44px;padding:0 14px;margin-top:8px;border:1px solid var(--line);border-radius:99px;text-decoration:none;color:var(--mute)">Admin</a></footer>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
@@ -195,11 +195,14 @@ function route(){cl.splice(0).forEach(f=>f());$("#menu").classList.remove("open"
   if(h==="3d"){let cur=0;const go=i=>{cur=i;mount3D($("#v3"),P[i]);$("#vl").href="#p-"+P[i].id;app.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("on",+b.dataset.t===i))};app.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{cl.splice(0).forEach(f=>f());go(+b.dataset.t)});go(0)}}
  document.body.classList.toggle("hasbar",!!pp);document.querySelectorAll("[data-n]").forEach(a=>a.classList.toggle("on",a.dataset.n===h||(pp&&a.dataset.n==="properties")));scrollTo(0,0)}
 addEventListener("hashchange",route);
-async function boot(){try{
- const[a,b]=await Promise.all([fetch("data/properties.json?v="+Date.now()),fetch("data/settings.json?v="+Date.now())]);
- if(a.ok){const rows=(await a.json()).filter(r=>r.published!==false);if(rows.length)P=rows.map(r=>({pal:["#1b2838","#c7a76c"],images:[],am:[],d:{},video:"",model:"",short:"",...r}))}
- if(b.ok){const s=await b.json();if(s){CFG.phone=s.phone||CFG.phone;CFG.show=s.display_phone||CFG.show;const k=CFG.broker;k.name=s.broker_name||k.name;k.title=s.broker_title||k.title;k.bio=s.bio||k.bio;k.years=s.years??k.years;k.sold=s.homes_sold??k.sold;k.areas=s.areas||k.areas;k.spec=s.specialisation||k.spec}}
- }catch(e){console.warn("Using built-in demo data",e)}
+const idb=()=>new Promise((res,rej)=>{const q=indexedDB.open("lq_demo",1);q.onupgradeneeded=()=>q.result.createObjectStore("kv");q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+const idbGet=async k=>{const d=await idb();return new Promise((res,rej)=>{const r=d.transaction("kv").objectStore("kv").get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})};
+async function boot(){
+ const dm={pal:["#1b2838","#c7a76c"],images:[],am:[],d:{},video:"",model:"",short:""},U=x=>x instanceof Blob?URL.createObjectURL(x):x;
+ const mk=rows=>{rows=rows.filter(r=>r.published!==false);if(rows.length)P=rows.map(r=>({...dm,...r,video:U(r.video||""),model:U(r.model||""),images:(r.images||[]).map(U)}))};
+ const applySet=s=>{if(!s)return;CFG.phone=s.phone||CFG.phone;CFG.show=s.display_phone||CFG.show;const k=CFG.broker;k.name=s.broker_name||k.name;k.title=s.broker_title||k.title;k.bio=s.bio||k.bio;k.years=s.years??k.years;k.sold=s.homes_sold??k.sold;k.areas=s.areas||k.areas;k.spec=s.specialisation||k.spec};
+ try{const[a,b]=await Promise.all([fetch("data/properties.json?v="+Date.now()),fetch("data/settings.json?v="+Date.now())]);if(a.ok)mk(await a.json());if(b.ok)applySet(await b.json())}catch(e){console.warn("Using built-in demo data",e)}
+ try{const dp=await idbGet("props");if(dp&&dp.length)mk(dp);applySet(await idbGet("set"))}catch(e){}
  $("#hcall").href="tel:"+CFG.phone;document.querySelectorAll('#menu a[href^="tel:"]').forEach(a=>{a.href="tel:"+CFG.phone;a.textContent="Call "+CFG.show});route()}
 boot();
 </script></body></html>
