@@ -1,82 +1,102 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Admin — Landiqoo Estates</title>
 <style>
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f7f6f2;color:#101114}
-main,.box{max-width:760px;margin:auto;padding:20px}.box{margin-top:12vh}h1,h2{font-family:Georgia,serif;margin:.3em 0}
+main,.box{max-width:760px;margin:auto;padding:20px}.box{margin-top:8vh}h1,h2{font-family:Georgia,serif;margin:.3em 0}
 header{background:#101114;color:#f7f6f2;padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}header b{color:#C7A76C;margin-right:auto;font-family:Georgia,serif;font-size:1.2rem}
 button,.b{min-height:48px;padding:0 20px;border-radius:12px;border:1px solid #C7A76C;background:#fff;font:600 .95rem inherit;cursor:pointer;color:#101114;text-decoration:none;display:inline-flex;align-items:center}
-.g{background:#C7A76C}.d{border-color:#b3261e;color:#b3261e}header button{background:none;color:#f7f6f2}
+.g{background:#C7A76C}.d{border-color:#b3261e;color:#b3261e}header button,header .b{background:none;color:#f7f6f2}
 label{display:block;margin:14px 0 4px;font-size:.85rem;font-weight:600}input,select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid #c9c6bb;border-radius:10px;font:inherit;background:#fff}
 textarea{min-height:90px}input[type=checkbox]{width:22px;min-height:22px}.ck{display:flex;gap:8px;align-items:center;margin:6px 0;font-weight:400}
 .am{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}.row{background:#fff;border:1px solid #e0ddd2;border-radius:14px;padding:14px;margin:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .row div{flex:1;min-width:180px}.row small{color:#666}.pill{font-size:.7rem;padding:2px 8px;border-radius:99px;background:#e6e2d4}
 .th{display:flex;gap:8px;flex-wrap:wrap}.th div{position:relative}.th img{width:96px;height:72px;object-fit:cover;border-radius:8px;display:block}.th button{min-height:32px;padding:0 8px;font-size:.8rem}
-#msg{position:sticky;bottom:0;padding:12px;margin-top:12px;border-radius:10px;background:#fff}.err{color:#b3261e}.ok{color:#1b6b3a}.hint{font-size:.8rem;color:#666;margin:4px 0}
+#msg{position:sticky;bottom:0;padding:12px;margin-top:12px;border-radius:10px;background:#fff}.err{color:#b3261e}.ok{color:#1b6b3a}.hint{font-size:.85rem;color:#555}
 </style></head><body>
-<div id="login" class="box"><h1>Broker login</h1><label>Email<input id="em" type="email" autocomplete="username"></label><label>Password<input id="pw" type="password" autocomplete="current-password"></label><p><button class="g" id="lg">Sign in</button></p><p id="le" class="err"></p><p><a href="index.html">← Back to website</a></p></div>
-<div id="app" hidden><header><b>Landiqoo Admin</b><button data-v="list">Properties</button><button data-v="st">Broker details</button><a class="b" href="index.html" style="color:#f7f6f2;border-color:#555">View website</a><button id="out">Sign out</button></header>
+<div id="gate" class="box"><h1>Broker login</h1><p id="ge" class="err"></p>
+ <form id="unlock" hidden><label>Password<input id="pw" type="password" autocomplete="current-password"></label><p><button class="g">Unlock</button></p><p class="hint"><a href="#" id="forget">Set up again on this device</a></p></form>
+ <form id="setup" hidden><p class="hint">One-time setup on this device. Paste the GitHub access token (see SETUP.md), then choose a password. The token is stored encrypted and is never shown again.</p><label>GitHub access token<input id="tk" type="password" autocomplete="off"></label><label>Choose a password (12+ characters)<input id="np" type="password" autocomplete="new-password"></label><label>Repeat password<input id="np2" type="password" autocomplete="new-password"></label><p><button class="g">Save &amp; unlock</button></p></form>
+ <p><a href="index.html">← Back to website</a></p></div>
+<div id="app" hidden><header><b>Landiqoo Admin</b><button data-v="list">Properties</button><button data-v="st">Broker details</button><a class="b" href="index.html">View website</a><button id="out">Lock</button></header>
 <main><div id="list"></div><form id="f" hidden></form><form id="st" hidden></form><p id="msg"></p></main></div>
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
 <script>
 const C=window.APP_CONFIG||{},$=s=>document.querySelector(s);
-if(!C.supabaseUrl){document.body.innerHTML="<p style='padding:24px'>Add your Supabase URL and anon key in config.js first (see SETUP.md).</p>";throw new Error("config")}
-const sb=supabase.createClient(C.supabaseUrl,C.supabaseAnonKey);
+let owner=C.owner,repo=C.repo,branch=C.branch||"main",TOK;
+if(!owner&&location.hostname.endsWith(".github.io")){owner=location.hostname.split(".")[0];const g=location.pathname.split("/")[1];repo=(!g||g.includes("."))?location.hostname:g}
+const enc=new TextEncoder(),dec=new TextDecoder(),b64=u=>btoa(String.fromCharCode(...new Uint8Array(u))),ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function key(pw,salt){const m=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:250000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function seal(t,pw){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));return JSON.stringify({s:b64(salt),i:b64(iv),c:b64(await crypto.subtle.encrypt({name:"AES-GCM",iv},await key(pw,salt),enc.encode(t)))})}
+async function unseal(pw){const o=JSON.parse(localStorage.getItem("lq_tok"));return dec.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub(o.i)},await key(pw,ub(o.s)),ub(o.c)))}
+const api=async(p,o={})=>{const r=await fetch(`https://api.github.com/repos/${owner}/${repo}`+(p?"/"+p:""),{...o,headers:{Authorization:"Bearer "+TOK,Accept:"application/vnd.github+json","Content-Type":"application/json"}});
+ if(!r.ok){let m=""+r.status;try{m=(await r.json()).message||m}catch(e){}throw new Error(r.status===401?"GitHub rejected the token (expired or wrong).":r.status===404?"Repo or file not found — check the token has access to this repository.":r.status===403?"Not allowed — the token needs Contents: Read and write. ("+m+")":r.status===409||r.status===422?"Conflict, please try again. ("+m+")":m)}return r.json()};
+const getJSON=async(p,def)=>{try{const f=await api(`contents/${p}?ref=${branch}`);return{data:JSON.parse(dec.decode(ub(f.content.replace(/\n/g,"")))),sha:f.sha}}catch(e){if(/not found/i.test(e.message))return{data:def,sha:null};throw e}};
+const put=(p,c,m,sha)=>api("contents/"+p,{method:"PUT",body:JSON.stringify({message:m,content:c,branch,...(sha?{sha}:{})})});
+const putJSON=(p,d,m,sha)=>put(p,b64(enc.encode(JSON.stringify(d,null,2))),m,sha);
+const fb64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(f)});
+async function shrink(f){if(!/^image\/(jpeg|png|webp)$/.test(f.type))return f;const bm=await createImageBitmap(f),k=Math.min(1,1600/Math.max(bm.width,bm.height)),c=document.createElement("canvas");c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext("2d").drawImage(bm,0,0,c.width,c.height);const b=await new Promise(r=>c.toBlob(r,"image/jpeg",.82));return new File([b],f.name.replace(/\.\w+$/,"")+".jpg",{type:"image/jpeg"})}
+async function up(f,sl){if(f.size>70*1048576)throw new Error(f.name+" is over 70 MB. Compress it or paste a link instead.");const p=`assets/${sl}/${Date.now()}-${f.name.replace(/[^\w.\-]/g,"_")}`;await put(p,await fb64(f),"Upload "+f.name);return p}
 const AM={pool:"Swimming pool",gym:"Gym",park:"Covered parking",garden:"Private garden",sec:"24×7 security",club:"Clubhouse",power:"Power backup",school:"Nearby schools",hosp:"Nearby hospitals",theatre:"Home theatre",lift:"High-speed lifts"};
-const KIND={villa:"Luxury Villa",apt:"Premium Apartment",house:"Independent House"},STAT=["Available","Few units left","Under offer","Sold"];
+const KIND={villa:"Luxury Villa",apt:"Premium Apartment",house:"Independent House"},PAL={villa:["#1b2838","#c7a76c"],apt:["#241f33","#d9b98a"],house:["#2c3a2f","#e0c58f"]},STAT=["Available","Few units left","Under offer","Sold"];
 const DET=["Architecture","Interiors","Construction","Neighbourhood","Nearby","Highlights"];
-const TXT=[["name","Property name *"],["location","Location (area, city) *"],["full_address","Full address"],["price","Price (e.g. ₹2.10 Cr)"],["area","Total area (sq ft)"],["parking","Parking (e.g. 2 cars)"],["beds","Bedrooms","number"],["baths","Bathrooms","number"],["lat","Map latitude (e.g. 12.9716)","number"],["lng","Map longitude (e.g. 77.5946)","number"]];
+const TXT=[["name","Property name *"],["loc","Location (area, city) *"],["full","Full address"],["price","Price (e.g. ₹2.10 Cr)"],["area","Total area (sq ft)"],["park","Parking (e.g. 2 cars)"],["beds","Bedrooms","number"],["baths","Bathrooms","number"],["lat","Map latitude (e.g. 12.9716)","number"],["lng","Map longitude (e.g. 77.5946)","number"]];
 const SET=[["phone","Phone for dialer (e.g. +919876543210)"],["display_phone","Phone as shown (e.g. +91 98765 43210)"],["broker_name","Broker name"],["broker_title","Professional title"],["bio","Short biography","area"],["years","Years of experience","number"],["homes_sold","Homes sold","number"],["areas","Areas served"],["specialisation","Specialisation"]];
 let cur,LIST=[];
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const msg=(t,e)=>{const m=$("#msg");m.textContent=t;m.className=e?"err":"ok"};
 const show=v=>{["list","f","st"].forEach(x=>$("#"+x).hidden=x!==v);msg("")};
-document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{b.dataset.v==="st"?editSettings():show("list")});
-sb.auth.onAuthStateChange((_,s)=>{$("#login").hidden=!!s;$("#app").hidden=!s;if(s)load()});
-$("#lg").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("#em").value.trim(),password:$("#pw").value});$("#le").textContent=error?error.message:""};
-$("#out").onclick=()=>sb.auth.signOut();
-async function load(){const{data,error}=await sb.from("properties").select("*").order("created_at",{ascending:false});if(error)return msg(error.message,1);LIST=data;
- $("#list").innerHTML=`<h2>Your properties</h2><p><button class="g" id="add">+ Add property</button></p>`+(data.map(r=>`<div class="row"><div><b>${esc(r.name)}</b><br><small>${esc(r.location)} · ${esc(r.price||"")}</small><br><span class="pill">${r.published?"Live":"Hidden"}</span> <span class="pill">${esc(r.status)}</span></div><button data-e="${r.slug}">Edit</button><a class="b" target="_blank" href="index.html#p-${r.slug}">View</a></div>`).join("")||"<p>No properties yet. Add your first one.</p>");
- $("#add").onclick=()=>edit();$("#list").querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>edit(LIST.find(r=>r.slug===b.dataset.e)));show("list")}
+const gate=m=>{$("#gate").hidden=false;$("#app").hidden=true;$("#unlock").hidden=m!=="u";$("#setup").hidden=m!=="s"};
+if(!owner){$("#ge").textContent="Set owner and repo in config.js (see SETUP.md).";}
+else if(!crypto.subtle){$("#ge").textContent="Open this page over https (your github.io address)."}
+else gate(localStorage.getItem("lq_tok")?"u":"s");
+async function enter(){$("#gate").hidden=true;$("#app").hidden=false;await load()}
+$("#unlock").onsubmit=async e=>{e.preventDefault();$("#ge").textContent="";try{TOK=await unseal($("#pw").value)}catch(x){return $("#ge").textContent="Wrong password."}$("#pw").value="";try{await enter()}catch(x){$("#ge").textContent=x.message;gate("u")}};
+$("#setup").onsubmit=async e=>{e.preventDefault();$("#ge").textContent="";const t=$("#tk").value.trim(),p=$("#np").value;if(p.length<12)return $("#ge").textContent="Password must be at least 12 characters.";if(p!==$("#np2").value)return $("#ge").textContent="Passwords do not match.";
+ TOK=t;try{await api("")}catch(x){return $("#ge").textContent=x.message}localStorage.setItem("lq_tok",await seal(t,p));$("#tk").value=$("#np").value=$("#np2").value="";try{await enter()}catch(x){$("#ge").textContent=x.message}};
+$("#forget").onclick=e=>{e.preventDefault();if(confirm("Remove the saved login from this device?")){localStorage.removeItem("lq_tok");gate("s")}};
+$("#out").onclick=()=>{TOK=null;gate("u")};
+document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>b.dataset.v==="st"?editSettings():show("list"));
+async function load(){const r=await getJSON("data/properties.json",[]);LIST=r.data||[];
+ $("#list").innerHTML=`<h2>Your properties</h2><p><button class="g" id="add">+ Add property</button></p>`+(LIST.map(r=>`<div class="row"><div><b>${esc(r.name)}</b><br><small>${esc(r.loc)} · ${esc(r.price)}</small><br><span class="pill">${r.published===false?"Hidden":"Live"}</span> <span class="pill">${esc(r.status)}</span></div><button data-e="${r.id}">Edit</button><a class="b" target="_blank" href="index.html#p-${r.id}">View</a></div>`).join("")||"<p>No properties yet. Add your first one.</p>");
+ $("#add").onclick=()=>edit();$("#list").querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>edit(LIST.find(r=>r.id===b.dataset.e)));show("list")}
 function thumbs(){$("#th").innerHTML=cur.images.map((u,i)=>`<div><img src="${esc(u)}" alt=""><button type="button" data-s="${i}" title="Make cover">★</button><button type="button" data-x="${i}" title="Remove">✕</button></div>`).join("");
  $("#th").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{const[u]=cur.images.splice(+b.dataset.s,1);cur.images.unshift(u);thumbs()});
  $("#th").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{cur.images.splice(+b.dataset.x,1);thumbs()})}
-function edit(r){cur=r?{...r}:{images:[],details:{},amenities:[],published:true,kind:"villa",status:"Available"};cur.images=[...(cur.images||[])];cur.details=cur.details||{};
- $("#f").innerHTML=`<h2>${r?"Edit":"Add"} property</h2>`+TXT.map(([n,l,t])=>`<label>${l}<input name="${n}" type="${t||"text"}" step="any" value="${esc(cur[n])}"></label>`).join("")+
+function edit(r){cur=r?{...r}:{images:[],d:{},am:[],published:true,kind:"villa",status:"Available"};cur.images=[...(cur.images||[])];cur.d=cur.d||{};
+ $("#f").innerHTML=`<h2>${r?"Edit":"Add"} property</h2>`+TXT.map(([n,l,t])=>`<label>${l}<input name="${n}" type="${t||"text"}" step="any" value="${esc(cur[n]==="–"?"":cur[n])}"></label>`).join("")+
  `<label>Property type<select name="kind">${Object.entries(KIND).map(([k,v])=>`<option value="${k}" ${cur.kind===k?"selected":""}>${v}</option>`).join("")}</select></label>
  <label>Availability<select name="status">${STAT.map(x=>`<option ${cur.status===x?"selected":""}>${x}</option>`).join("")}</select></label>
- <label>Short description (shown on cards)<textarea name="short_desc">${esc(cur.short_desc)}</textarea></label>`+
- DET.map(k=>`<label>${k}<textarea name="d_${k}">${esc(cur.details[k])}</textarea></label>`).join("")+
- `<label>Amenities</label><div class="am">${Object.entries(AM).map(([k,v])=>`<label class="ck"><input type="checkbox" name="am" value="${k}" ${(cur.amenities||[]).includes(k)?"checked":""}>${v}</label>`).join("")}</div>
- <label>Property video (MP4)${cur.video_url?" — current video kept unless you choose a new one":""}<input type="file" name="video" accept="video/*"></label>
- <label>…or paste a video link (for large videos hosted elsewhere)<input name="video_link" type="url" placeholder="https://" value=""></label>
- <label>3D model (.glb or .gltf)${cur.model_url?" — current model kept unless you choose a new one":""}<input type="file" name="model" accept=".glb,.gltf"></label>
- <label>Photos (select many). First photo is the cover.</label><div class="th" id="th"></div><input type="file" name="images" accept="image/*" multiple>
- <label class="ck"><input type="checkbox" name="published" ${cur.published?"checked":""}>Published (visible on the website)</label>
+ <label>Short description (shown on cards)<textarea name="short">${esc(cur.short)}</textarea></label>`+
+ DET.map(k=>`<label>${k}<textarea name="d_${k}">${esc(cur.d[k])}</textarea></label>`).join("")+
+ `<label>Amenities</label><div class="am">${Object.entries(AM).map(([k,v])=>`<label class="ck"><input type="checkbox" name="am" value="${k}" ${(cur.am||[]).includes(k)?"checked":""}>${v}</label>`).join("")}</div>
+ <label>Property video (MP4, best under 40 MB)${cur.video?" — current video kept unless you choose a new one":""}<input type="file" name="video" accept="video/*"></label>
+ <label>…or paste a video link (for large videos hosted elsewhere)<input name="video_link" type="url" placeholder="https://"></label>
+ <label>3D model (.glb or .gltf)${cur.model?" — current model kept unless you choose a new one":""}<input type="file" name="model" accept=".glb,.gltf"></label>
+ <label>Photos (select many; they are resized automatically). First photo is the cover.</label><div class="th" id="th"></div><input type="file" name="images" accept="image/*" multiple>
+ <label class="ck"><input type="checkbox" name="published" ${cur.published!==false?"checked":""}>Published (visible on the website)</label>
  <p class="row"><button class="g" id="sv">Save &amp; publish</button><button type="button" id="cn">Cancel</button>${r?'<button type="button" class="d" id="dl">Delete</button>':""}</p>`;
  thumbs();show("f");scrollTo(0,0);$("#cn").onclick=()=>show("list");
- if(r)$("#dl").onclick=async()=>{if(!confirm("Delete this property permanently?"))return;const{error}=await sb.from("properties").delete().eq("slug",cur.slug);error?msg(error.message,1):(await load(),msg("Deleted."))}}
-async function up(file,sl){const p=sl+"/"+Date.now()+"-"+file.name.replace(/[^\w.\-]/g,"_"),{error}=await sb.storage.from("property-media").upload(p,file,{cacheControl:"31536000"});if(error)throw error;return sb.storage.from("property-media").getPublicUrl(p).data.publicUrl}
+ if(r)$("#dl").onclick=async()=>{if(!confirm("Delete this property permanently?"))return;try{const c=await getJSON("data/properties.json",[]);await putJSON("data/properties.json",c.data.filter(x=>x.id!==cur.id),"Delete "+cur.name,c.sha);await load();msg("Deleted. The website updates in 1–2 minutes.")}catch(x){msg(x.message,1)}}}
 $("#f").onsubmit=async e=>{e.preventDefault();const f=e.target,b=$("#sv");b.disabled=true;
  try{const v=n=>f.elements[n].value.trim(),row={};
-  TXT.forEach(([n,,t])=>{row[n]=v(n)===""?null:(t==="number"?Number(v(n)):v(n))});
-  if(!row.name||!row.location)throw new Error("Name and location are required.");
-  row.kind=v("kind");row.type=KIND[row.kind];row.status=v("status");row.short_desc=v("short_desc")||null;
-  row.details=Object.fromEntries(DET.map(k=>[k,v("d_"+k)]).filter(x=>x[1]));
-  row.amenities=[...f.querySelectorAll("[name=am]:checked")].map(x=>x.value);
-  row.published=f.elements.published.checked;row.updated_at=new Date().toISOString();
-  row.slug=cur.slug||slug(row.name)||"property-"+Date.now();
-  if(!cur.slug&&LIST.some(r=>r.slug===row.slug))row.slug+="-"+Math.random().toString(36).slice(2,6);
+  TXT.forEach(([n,,t])=>{const x=v(n);row[n]=x===""?(n==="lat"||n==="lng"?null:(t==="number"?"–":"")):(t==="number"?Number(x):x)});
+  if(!row.name||!row.loc)throw new Error("Name and location are required.");
+  row.full=row.full||row.loc;row.price=row.price||"Price on request";row.area=row.area||"–";row.park=row.park||"–";
+  row.kind=v("kind");row.type=KIND[row.kind];row.pal=cur.pal||PAL[row.kind];row.status=v("status");row.short=v("short");
+  row.d=Object.fromEntries(DET.map(k=>[k,v("d_"+k)]).filter(x=>x[1]));
+  row.am=[...f.querySelectorAll("[name=am]:checked")].map(x=>x.value);row.published=f.elements.published.checked;
+  row.id=cur.id||slug(row.name)||"property-"+Date.now();if(!cur.id&&LIST.some(r=>r.id===row.id))row.id+="-"+Math.random().toString(36).slice(2,6);
   const vf=f.elements.video.files[0],mf=f.elements.model.files[0],imgs=[...f.elements.images.files];
-  row.video_url=cur.video_url||null;if(vf){msg("Uploading video… this can take a while");row.video_url=await up(vf,row.slug)}else if(v("video_link"))row.video_url=v("video_link");
-  row.model_url=cur.model_url||null;if(mf){msg("Uploading 3D model…");row.model_url=await up(mf,row.slug)}
-  row.images=[...cur.images];for(let i=0;i<imgs.length;i++){msg(`Uploading photo ${i+1} of ${imgs.length}…`);row.images.push(await up(imgs[i],row.slug))}
-  const{error}=await sb.from("properties").upsert(row,{onConflict:"slug"});if(error)throw error;
-  await load();msg("Saved — it is now live on the website.")
+  row.video=cur.video||"";if(vf){msg("Uploading video… this can take a few minutes");row.video=await up(vf,row.id)}else if(v("video_link"))row.video=v("video_link");
+  row.model=cur.model||"";if(mf){msg("Uploading 3D model…");row.model=await up(mf,row.id)}
+  row.images=[...cur.images];for(let i=0;i<imgs.length;i++){msg(`Uploading photo ${i+1} of ${imgs.length}…`);row.images.push(await up(await shrink(imgs[i]),row.id))}
+  msg("Publishing…");const c=await getJSON("data/properties.json",[]),arr=c.data||[],ix=arr.findIndex(r=>r.id===row.id);ix>=0?arr[ix]=row:arr.unshift(row);
+  await putJSON("data/properties.json",arr,(ix>=0?"Update ":"Add ")+row.name,c.sha);
+  await load();msg("Saved. GitHub is publishing — it will be live on the website in 1–2 minutes.")
  }catch(x){msg(x.message||String(x),1)}b.disabled=false};
-async function editSettings(){const{data}=await sb.from("settings").select("*").eq("id",1).single(),d=data||{};
+async function editSettings(){const c=await getJSON("data/settings.json",{}),d=c.data||{};
  $("#st").innerHTML=`<h2>Broker details</h2><p class="hint">Updates the phone number on every INQUIRE NOW button and the broker section.</p>`+SET.map(([n,l,t])=>t==="area"?`<label>${l}<textarea name="${n}">${esc(d[n])}</textarea></label>`:`<label>${l}<input name="${n}" type="${t||"text"}" value="${esc(d[n])}"></label>`).join("")+`<p><button class="g">Save</button></p>`;show("st")}
-$("#st").onsubmit=async e=>{e.preventDefault();const row={id:1};SET.forEach(([n,,t])=>{const x=e.target.elements[n].value.trim();row[n]=x===""?null:(t==="number"?Number(x):x)});
+$("#st").onsubmit=async e=>{e.preventDefault();const row={};SET.forEach(([n,,t])=>{const x=e.target.elements[n].value.trim();row[n]=x===""?null:(t==="number"?Number(x):x)});
  if(row.phone&&!/^\+?[0-9]{7,15}$/.test(row.phone))return msg("Phone must contain digits only (with optional leading +).",1);
- const{error}=await sb.from("settings").upsert(row);error?msg(error.message,1):msg("Saved — live on the website.")};
+ try{const c=await getJSON("data/settings.json",{});await putJSON("data/settings.json",row,"Update broker details",c.sha);msg("Saved. Live on the website in 1–2 minutes.")}catch(x){msg(x.message,1)}};
 </script></body></html>

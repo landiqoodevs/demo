@@ -32,4 +32,4 @@ The demo has no uploads or admin. For the broker to self-manage you need:
 6. Optional: per-property prerendered pages for SEO and analytics for call-button taps.
 
 ## Backend
-See SETUP.md for the client self-service admin portal (admin.html) and Supabase setup.
+See SETUP.md: the admin portal (admin.html) saves to this GitHub repo; no other service needed.

@@ -1,0 +1,121 @@
+[
+  {
+    "id": "aurora",
+    "kind": "villa",
+    "type": "Luxury Villa",
+    "name": "The Aurora Villa",
+    "loc": "Sarjapur Road, Bengaluru",
+    "full": "Plot 14, Aurora Enclave, Sarjapur Road, Bengaluru 562125",
+    "price": "₹4.85 Cr",
+    "beds": 5,
+    "baths": 6,
+    "area": "6,200",
+    "park": "4 cars",
+    "status": "Available",
+    "pal": [
+      "#1b2838",
+      "#c7a76c"
+    ],
+    "video": "",
+    "model": "",
+    "short": "A sculpted contemporary villa with a private pool, double-height living and landscaped gardens.",
+    "d": {
+      "Architecture": "Contemporary tropical modernism with cantilevered slabs and floor-to-ceiling glazing.",
+      "Interiors": "Italian marble, walnut joinery, a chef’s kitchen and a private home theatre.",
+      "Construction": "RCC frame, double-glazed aluminium façade, smart-home wiring throughout.",
+      "Neighbourhood": "A gated enclave of 40 villas, five minutes from the Outer Ring Road.",
+      "Nearby": "International schools 2 km · Multi-speciality hospital 3 km · Tech parks 6 km",
+      "Highlights": "Private pool · Lift-ready · Vastu-compliant · Solar rooftop"
+    },
+    "am": [
+      "pool",
+      "garden",
+      "park",
+      "sec",
+      "power",
+      "theatre",
+      "school",
+      "hosp"
+    ],
+    "published": true
+  },
+  {
+    "id": "skyline",
+    "kind": "apt",
+    "type": "Premium Apartment",
+    "name": "Skyline Residences 24A",
+    "loc": "Whitefield, Bengaluru",
+    "full": "Tower A, 24th Floor, Skyline Residences, Whitefield, Bengaluru 560066",
+    "price": "₹2.10 Cr",
+    "beds": 3,
+    "baths": 3,
+    "area": "2,150",
+    "park": "2 cars",
+    "status": "Available",
+    "pal": [
+      "#241f33",
+      "#d9b98a"
+    ],
+    "video": "",
+    "model": "",
+    "short": "A 24th-floor corner residence with panoramic skyline views and resort-style amenities.",
+    "d": {
+      "Architecture": "A slender glass tower with wraparound balconies and a landscaped podium.",
+      "Interiors": "Open-plan living, engineered oak flooring, a modular kitchen with premium appliances.",
+      "Construction": "Post-tensioned slabs, earthquake-resistant design, rain-water harvesting.",
+      "Neighbourhood": "Walkable to metro, cafés and the ITPL corridor.",
+      "Nearby": "Metro 800 m · Malls 1.5 km · Hospital 2 km",
+      "Highlights": "Corner unit · Two covered parking bays · Clubhouse access"
+    },
+    "am": [
+      "pool",
+      "gym",
+      "club",
+      "lift",
+      "park",
+      "sec",
+      "power",
+      "school",
+      "hosp"
+    ],
+    "published": true
+  },
+  {
+    "id": "meadow",
+    "kind": "house",
+    "type": "Independent House",
+    "name": "Meadow Courtyard House",
+    "loc": "Devanahalli, Bengaluru",
+    "full": "No. 7, Meadow Lane, Devanahalli, Bengaluru 562110",
+    "price": "₹1.35 Cr",
+    "beds": 3,
+    "baths": 3,
+    "area": "2,400",
+    "park": "2 cars",
+    "status": "Few units left",
+    "pal": [
+      "#2c3a2f",
+      "#e0c58f"
+    ],
+    "video": "",
+    "model": "",
+    "short": "A warm, modern independent home built around a sunlit courtyard and a generous garden.",
+    "d": {
+      "Architecture": "Pitched-roof modern farmhouse with a central courtyard and deep verandahs.",
+      "Interiors": "Terracotta accents, exposed beams, bright open kitchen-dining.",
+      "Construction": "Load-bearing and RCC hybrid, passive cooling, rainwater recharge pit.",
+      "Neighbourhood": "A quiet residential layout near the airport corridor.",
+      "Nearby": "Airport 12 km · Schools 1.5 km · Clinic 1 km",
+      "Highlights": "Freehold · 2,400 sq ft built-up · East-facing"
+    },
+    "am": [
+      "garden",
+      "park",
+      "sec",
+      "power",
+      "school",
+      "hosp"
+    ],
+    "published": true
+  }
+]

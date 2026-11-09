@@ -1,33 +1,37 @@
-# Setup — client self-service uploads (about 20 minutes)
+# Setup — client self-service uploads using only GitHub (no other service)
 
-How it works: the broker signs in at `admin.html`, fills in a form and uploads video, photos and a 3D model.
-Data goes to Supabase (database + file storage). The public `index.html` loads it live, so changes appear
-on the website instantly with no redeploy.
+How it works: the broker opens `admin.html`, unlocks it with a password, fills in a form and uploads video,
+photos and a 3D model. The page saves them into your GitHub repository (`data/*.json` and `assets/`).
+GitHub Pages republishes the site automatically, so changes go live in about 1–2 minutes.
 
-## 1. Create the backend (free tier is enough to start)
-1. Create an account and a new project at https://supabase.com.
-2. Open SQL Editor, paste all of `supabase/schema.sql`, click Run.
-3. Authentication -> Users -> Add user: create the broker's login (email + password, tick "auto confirm").
-4. Authentication settings: turn OFF "Allow new users to sign up" so only the broker you created can log in.
-5. Project Settings -> API: copy the Project URL and the `anon` public key.
+## One-time setup (you, the developer)
+1. Put this folder in a PUBLIC GitHub repo (free GitHub Pages needs public) and turn on Pages:
+   Settings -> Pages -> Deploy from a branch -> `main` / `(root)`.
+2. Create an access token for the broker's admin page:
+   GitHub -> your profile photo -> Settings -> Developer settings -> Personal access tokens -> Fine-grained tokens -> Generate new token.
+   - Repository access: "Only select repositories" -> choose this repo.
+   - Permissions -> Repository permissions -> Contents: **Read and write** (nothing else).
+   - Expiration: the longest allowed. Note the renewal date; when it expires, make a new token and repeat step 3.
+   Copy the token (starts with `github_pat_`).
+3. Open `https://YOUR-USERNAME.github.io/REPO-NAME/admin.html` on the broker's phone or laptop.
+   Paste the token, choose a strong password (12+ characters) and tap Save & unlock.
+   The token is encrypted with that password and stored only on that device.
+   From then on the broker only types the password. Do this on each device he will use.
+4. If you use a custom domain, fill in `owner` and `repo` in `config.js`.
 
-## 2. Connect the website
-Open `config.js` and paste the URL and anon key. The anon key is designed to be public; row-level security in the SQL protects the data.
-
-## 3. Deploy both files
-Upload this whole folder to Netlify, Vercel, Cloudflare Pages or GitHub Pages (HTTPS required).
-- Website: `https://your-domain/`
-- Broker portal: `https://your-domain/admin.html` (bookmark it; it is not linked from the site)
-
-## 4. Broker workflow
-Sign in -> Add property -> fill details, map coordinates, upload video / 3D model / photos -> Save & publish.
-"Broker details" updates the phone number and profile everywhere. "Published" off hides a property.
-Map: right-click the spot in Google Maps and click the coordinates to copy latitude and longitude.
+## Broker workflow
+Website footer -> "🔒 Admin login" -> password -> Add property -> fill the form, upload files -> Save & publish.
+"Broker details" changes the phone number and profile. "Published" off hides a property.
+Map coordinates: right-click the spot in Google Maps and tap the numbers to copy latitude/longitude.
 
 ## Limits and tips
-- Supabase free tier allows ~50 MB per file and 1 GB storage. Compress videos (MP4 H.264, 720p, under 40 MB).
-  For longer or larger videos use Cloudflare Stream or Mux and paste the link in the "video link" field.
-- 3D models: GLB under ~10 MB (Draco/Meshopt compression recommended).
-- Deleting a property does not delete its files from storage; clear them in Supabase -> Storage if needed.
-- The "map" is an OpenStreetMap embed with an Open in Google Maps link. A true 3D map (satellite/terrain) would need Google Maps or Mapbox and an API key.
-- If Supabase is unreachable or empty, the site falls back to the built-in demo properties.
+- Photos are resized to 1600 px automatically. Keep videos under ~40 MB (MP4 H.264, 720p); hard limit in the form is 70 MB.
+  For longer videos host them on YouTube/Cloudflare Stream/Mux and paste the link in "video link"
+  (YouTube pages cannot play inside the video tag; use a direct MP4 URL).
+- 3D models: GLB under ~10 MB.
+- Every upload is a commit; the repo grows with each file. GitHub recommends repos stay under ~1 GB.
+- Deleting a property or removing a photo does not delete the files from the repo.
+- The token is secret. Anyone who learns the password AND gets the broker's browser data could use it,
+  so use a strong password. The token can only edit this one repository. If lost, revoke it on GitHub and make a new one.
+- Because the repo is public, anyone can read the property data and media (it is public on the website anyway).
+- If GitHub is unreachable, the site falls back to the built-in demo properties.
